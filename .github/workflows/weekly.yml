@@ -19,4 +19,4 @@ jobs:
         with:
           environment-file: environment.yml
       - name: Run beefscripy
-        run: python beefscripy.py
+        run: python crispybeefbot.py
