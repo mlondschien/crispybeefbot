@@ -1,7 +1,7 @@
 name: Daily runs
 on:
   schedule:
-    - cron: '0 8 * * 1'  # 8 am on mondays
+    - cron: '0 8 * * 1'  # 8am on mondays
   push:
     paths:
     - '.github/workflows/weekly.yml'
