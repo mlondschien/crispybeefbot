@@ -4,7 +4,7 @@ on:
     - cron: '0 8 * * 1'  # 8am on mondays
   push:
     paths:
-    - '.github/workflows/daily.yml'
+    - '.github/workflows/weekly.yml'
 
 jobs:
   crispy-beef-check:
