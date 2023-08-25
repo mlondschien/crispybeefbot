@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python
-  - google-api-python-client
-  - google-auth-httplib2
-  - google-auth-oauthlib
+  - google-api-python-client =2.74.0
+  - google-auth-httplib2 =0.1.0
+  - google-auth-oauthlib =0.8.0
