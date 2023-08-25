@@ -21,8 +21,8 @@ for date, info in response["Clausiusbar"]["weekdays"].items():
             if "crispy beef" in " ".join(menu["description"]).lower():
                 crispy_beefs += [(info["label"], date)]
 
-if len(crispy_beefs) == 0:
-    sys.exit()
+# if len(crispy_beefs) == 0:
+    # sys.exit()
 
 subject = f"Crispy Beef on {' and '.join(c[0] for c in crispy_beefs)}"
 
