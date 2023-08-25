@@ -4,7 +4,7 @@ import os
 from email.message import EmailMessage
 import sys
 import requests
-from google.credentials import Credentials
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 url = "http://mensazurich.ch:8080/api/de/all/getMensaForCurrentWeek"
