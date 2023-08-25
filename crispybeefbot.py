@@ -2,9 +2,9 @@ import base64
 import json
 import os
 from email.message import EmailMessage
-
+import sys
 import requests
-from google.oauth2.credentials import Credentials
+from googleapiclient.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 url = "http://mensazurich.ch:8080/api/de/all/getMensaForCurrentWeek"
@@ -21,6 +21,8 @@ for date, info in response["Clausiusbar"]["weekdays"].items():
             if "crispy beef" in " ".join(menu["description"]).lower():
                 crispy_beefs += [(info["label"], date)]
 
+if len(crispy_beefs) == 0:
+    sys.exit()
 
 subject = f"Crispy Beef on {' and '.join(c[0] for c in crispy_beefs)}"
 
