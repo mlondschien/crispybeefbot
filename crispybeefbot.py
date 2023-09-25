@@ -19,6 +19,7 @@ crispy_beefs = []
 for date, info in response["Clausiusbar"]["weekdays"].items():
     for mealtype, meal in info["mealTypes"].items():
         if mealtype == "dinner":
+            # Only consider Lunch. TODO: Possibly also consider dinner.
             continue
         for menu in meal["menus"]:
             if "crispy beef" in " ".join(menu["description"]).lower():
@@ -42,6 +43,7 @@ def create_event(creds, weekday, date, attendees):
         "attendees": [{"email": attendee} for attendee in attendees],
     }
 
+    # sendUpdates="all" sends an email to all attendees
     return (
         service.events()
         .insert(calendarId="primary", body=event, sendUpdates="all")
@@ -74,6 +76,9 @@ def send_message(creds, subject, content, to, sender="crispybeefbot"):
 
 creds = Credentials.from_authorized_user_info(json.loads(os.environ["GOOGLE_TOKEN"]))
 if not creds.valid:
+    # Note: If the "app" is in testing, the refresh token will be valid for 7 days only.
+    # "publish" the "app" to circumvent this. Still, need to refresh the auth token
+    # with the refresh token (both part of the GOOGLE_TOKEN json).
     creds.refresh(Request())
 
 with open("recipients.txt", "r") as r:
@@ -85,6 +90,7 @@ events = []
 for crispy_beef in crispy_beefs:
     try:
         res = create_event(creds, crispy_beef[0], crispy_beef[1], recipients)
+        # Unused, as the htmlLink appears not to work...
         events.append(f"{crispy_beef[0]}: {res['htmlLink']}")
     except Exception as e:
         errors.append(e)
