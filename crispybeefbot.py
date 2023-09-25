@@ -6,6 +6,7 @@ import sys
 import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
 
 url = "http://mensazurich.ch:8080/api/de/all/getMensaForCurrentWeek"
 
@@ -26,21 +27,26 @@ for date, info in response["Clausiusbar"]["weekdays"].items():
 if len(crispy_beefs) == 0:
     sys.exit()
 
-def create_event(creds, date, attendees):
+
+def create_event(creds, weekday, date, attendees):
     service = build("calendar", "v3", credentials=creds)
     start = f"{date}T12:00:00"
     end = f"{date}T13:00:00"
 
     event = {
-        "summary": "Crispy Beef",
+        "summary": f"Crispy Beef on {date} ({weekday})",
         "location": "Clausiusbar",
         "description": "Crispy Beef",
         "start": {"dateTime": start, "timeZone": "Europe/Zurich"},
         "end": {"dateTime": end, "timeZone": "Europe/Zurich"},
-        "attendees": [{"email": attendee} for attendee in attendees]
+        "attendees": [{"email": attendee} for attendee in attendees],
     }
 
-    return service.events().insert(calendarId="primary", body=event).execute()
+    return (
+        service.events()
+        .insert(calendarId="primary", body=event, sendUpdates="all")
+        .execute()
+    )
 
 
 def send_message(creds, subject, content, to, sender="crispybeefbot"):
@@ -67,6 +73,8 @@ def send_message(creds, subject, content, to, sender="crispybeefbot"):
 
 
 creds = Credentials.from_authorized_user_info(json.loads(os.environ["GOOGLE_TOKEN"]))
+if not creds.valid:
+    creds.refresh(Request())
 
 with open("recipients.txt", "r") as r:
     recipients = r.read().split("\n")
@@ -76,12 +84,12 @@ events = []
 
 for crispy_beef in crispy_beefs:
     try:
-        res = create_event(creds, crispy_beef[1], recipients)
+        res = create_event(creds, crispy_beef[0], crispy_beef[1], recipients)
         events.append(f"{crispy_beef[0]}: {res['htmlLink']}")
     except Exception as e:
         errors.append(e)
 
-subject = f"Crispy Beef on {' and '.join(c[0] for c in crispy_beefs)}"
+subject = f"Crispy Beef this {' and '.join(c[0] for c in crispy_beefs)}"
 for recipient in recipients:
     error = send_message(creds, subject, "\n".join(res), recipient)
     if error is not None:
