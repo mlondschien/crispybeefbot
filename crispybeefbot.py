@@ -91,7 +91,7 @@ for crispy_beef in crispy_beefs:
 
 subject = f"Crispy Beef this {' and '.join(c[0] for c in crispy_beefs)}"
 for recipient in recipients:
-    error = send_message(creds, subject, "\n".join(res), recipient)
+    error = send_message(creds, subject, "", recipient)
     if error is not None:
         errors.append(error)
 
