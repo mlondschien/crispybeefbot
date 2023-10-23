@@ -5,6 +5,7 @@ on:
   push:
     paths:
     - '.github/workflows/weekly.yml'
+    - '.github/workflows/crispybeefbot.py'
 
 jobs:
   crispy-beef-check:

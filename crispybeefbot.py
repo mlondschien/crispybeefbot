@@ -7,23 +7,39 @@ import requests
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
+import datetime
 
-url = "http://mensazurich.ch:8080/api/de/all/getMensaForCurrentWeek"
+today = datetime.date.today().strftime("%Y-%m-%d")
+next_week = (datetime.date.today() + datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+
+url = f"https://idapps.ethz.ch/cookpit-pub-services/v1/weeklyrotas/?client-id=ethz-wcms&lang=de&rs-first=0&rs-size=50&valid-after={today}&valid-before={next_week}&facility=3"
 
 response = json.loads(
     requests.get(url, headers={"User-Agent": "Custom"}, json=True).text
 )
-
+start_of_the_week = datetime.datetime.strptime(
+    response["weekly-rota-array"][0]["valid-from"], "%Y-%m-%d"
+)
+entries_this_week = response["weekly-rota-array"][0]["day-of-week-array"]
 crispy_beefs = []
 
-for date, info in response["Clausiusbar"]["weekdays"].items():
-    for mealtype, meal in info["mealTypes"].items():
-        if mealtype == "dinner":
-            # Only consider Lunch. TODO: Possibly also consider dinner.
+for entry in entries_this_week:
+    day = entry["day-of-week-desc"]
+    if day in ["Samstag", "Sonntag"]:
+        continue
+    date = (
+        start_of_the_week + datetime.timedelta(days=int(entry["day-of-week-code"]) - 1)
+    ).strftime("%Y-%m-%d")
+    meal_times = entry["opening-hour-array"][0]["meal-time-array"]
+    for meal_time in meal_times:
+        if meal_time["name"] != "Mittag":
             continue
-        for menu in meal["menus"]:
-            if "crispy beef" in " ".join(menu["description"]).lower():
-                crispy_beefs += [(info["label"], date)]
+
+        for meal in meal_time["line-array"]:
+            name = meal["meal"]["name"]
+            # description = meal["meal"]["description"]
+            if name.lower() == "crispy beef":
+                crispy_beefs += [(day, date)]
 
 if len(crispy_beefs) == 0:
     sys.exit()
