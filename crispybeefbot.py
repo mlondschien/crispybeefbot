@@ -23,6 +23,9 @@ start_of_the_week = datetime.datetime.strptime(
 entries_this_week = response["weekly-rota-array"][0]["day-of-week-array"]
 crispy_beefs = []
 
+if len(entries_this_week) == 0:
+    raise ValueError("No entries this week. Is this correct?")
+
 for entry in entries_this_week:
     day = entry.get("day-of-week-desc")
     if day in ["Samstag", "Sonntag"]:
