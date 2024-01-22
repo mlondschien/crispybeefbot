@@ -24,15 +24,15 @@ entries_this_week = response["weekly-rota-array"][0]["day-of-week-array"]
 crispy_beefs = []
 
 for entry in entries_this_week:
-    day = entry["day-of-week-desc"]
+    day = entry.get("day-of-week-desc")
     if day in ["Samstag", "Sonntag"]:
         continue
     date = (
         start_of_the_week + datetime.timedelta(days=int(entry["day-of-week-code"]) - 1)
     ).strftime("%Y-%m-%d")
-    meal_times = entry["opening-hour-array"][0]["meal-time-array"]
+    meal_times = entry.get("opening-hour-array",[{}])[0].get("meal-time-array", [])
     for meal_time in meal_times:
-        if meal_time["name"] != "Mittag":
+        if not "Mittag" in meal_time["name"]:  # Used to be "Mittag", now "Mittagessen"
             continue
 
         for meal in meal_time["line-array"]:
@@ -43,7 +43,6 @@ for entry in entries_this_week:
 
 if len(crispy_beefs) == 0:
     sys.exit()
-
 
 def create_event(creds, weekday, date, attendees):
     service = build("calendar", "v3", credentials=creds)
@@ -111,11 +110,14 @@ for crispy_beef in crispy_beefs:
     except Exception as e:
         errors.append(e)
 
-subject = f"Crispy Beef this {' and '.join(c[0] for c in crispy_beefs)}"
-for recipient in recipients:
-    error = send_message(creds, subject, "", recipient)
-    if error is not None:
-        errors.append(error)
+if len(errors) > 0:
+    raise Exception(errors)
+
+# subject = f"Crispy Beef this {' and '.join(c[0] for c in crispy_beefs)}"
+# for recipient in recipients:
+#     error = send_message(creds, subject, "", recipient)
+#     if error is not None:
+#         errors.append(error)
 
 if len(errors) > 0:
     raise Exception(errors)
