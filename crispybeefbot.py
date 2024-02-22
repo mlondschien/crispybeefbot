@@ -8,54 +8,71 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 import datetime
+from pathlib import Path
+import re
+
+
+MENSA_IDS = {
+    "Clausiusbar": 3,
+    "Polyterrasse": 12,
+    "Food Market (grill bbq)": 18,
+    "Food Market (green day)": 17,
+    "Fusion": 20,
+}
+
+BASE_URL = "https://idapps.ethz.ch/cookpit-pub-services/v1/weeklyrotas/?client-id=ethz-wcms&lang=de&rs-first=0&rs-size=50"
+
+with open(Path(__file__).parent / "messages.json") as f:
+    items = json.load(f)
 
 today = datetime.date.today().strftime("%Y-%m-%d")
 next_week = (datetime.date.today() + datetime.timedelta(days=7)).strftime("%Y-%m-%d")
 
-url = f"https://idapps.ethz.ch/cookpit-pub-services/v1/weeklyrotas/?client-id=ethz-wcms&lang=de&rs-first=0&rs-size=50&valid-after={today}&valid-before={next_week}&facility=3"
+emails = []
 
-response = json.loads(
-    requests.get(url, headers={"User-Agent": "Custom"}, json=True).text
-)
-start_of_the_week = datetime.datetime.strptime(
-    response["weekly-rota-array"][0]["valid-from"], "%Y-%m-%d"
-)
-entries_this_week = response["weekly-rota-array"][0]["day-of-week-array"]
-crispy_beefs = []
+for item in items.values():
+    for mensa in item["mensas"]:
+        mensa_id = MENSA_IDS[mensa]
 
-if len(entries_this_week) == 0:
-    raise ValueError("No entries this week. Is this correct?")
+        url = f"{BASE_URL}&valid-after={today}&valid-before={next_week}&facility={mensa_id}"
+        response = json.loads(
+            requests.get(url, headers={"User-Agent": "Custom"}, json=True).text
+        )
+        start_of_the_week = datetime.datetime.strptime(
+            response["weekly-rota-array"][0]["valid-from"], "%Y-%m-%d"
+        )
+        entries_this_week = response["weekly-rota-array"][0]["day-of-week-array"]
 
-for entry in entries_this_week:
-    day = entry.get("day-of-week-desc")
-    if day in ["Samstag", "Sonntag"]:
-        continue
-    date = (
-        start_of_the_week + datetime.timedelta(days=int(entry["day-of-week-code"]) - 1)
-    ).strftime("%Y-%m-%d")
-    meal_times = entry.get("opening-hour-array",[{}])[0].get("meal-time-array", [])
-    for meal_time in meal_times:
-        if not "Mittag" in meal_time["name"]:  # Used to be "Mittag", now "Mittagessen"
-            continue
+        for entry in entries_this_week:
+            day = entry.get("day-of-week-desc")
+            if day in ["Samstag", "Sonntag"]:
+                continue
+            date = (
+                start_of_the_week + datetime.timedelta(days=int(entry["day-of-week-code"]) - 1)
+            ).strftime("%Y-%m-%d")
+            meal_times = entry.get("opening-hour-array",[{}])[0].get("meal-time-array", [])
+            for meal_time in meal_times:
+                if "dinner" in meal_time["name"].lower() or "Abend" in meal_time["name"]:
+                    continue
 
-        for meal in meal_time["line-array"]:
-            name = meal["meal"]["name"]
-            # description = meal["meal"]["description"]
-            if name.lower() == "crispy beef":
-                crispy_beefs += [(day, date)]
+                for meal in meal_time["line-array"]:
+                    name = meal["meal"]["name"]
+                    if re.search(item["regex"], name, re.IGNORECASE) is not None:
+                        emails += [(mensa, day, date, name, item["recipients"])]
 
-if len(crispy_beefs) == 0:
+if len(emails) == 0:
     sys.exit()
 
-def create_event(creds, weekday, date, attendees):
+def create_event(creds, mensa, day, date, name, attendees):
     service = build("calendar", "v3", credentials=creds)
+
     start = f"{date}T12:00:00"
     end = f"{date}T13:00:00"
 
     event = {
-        "summary": f"Crispy Beef on {date} ({weekday})",
-        "location": "Clausiusbar",
-        "description": "Crispy Beef",
+        "summary": f"{name} on {date} ({day}) at {mensa}",
+        "location": mensa,
+        "description": name,
         "start": {"dateTime": start, "timeZone": "Europe/Zurich"},
         "end": {"dateTime": end, "timeZone": "Europe/Zurich"},
         "attendees": [{"email": attendee} for attendee in attendees],
@@ -91,7 +108,6 @@ def send_message(creds, subject, content, to, sender="crispybeefbot"):
     except Exception as e:
         return e
 
-
 creds = Credentials.from_authorized_user_info(json.loads(os.environ["GOOGLE_TOKEN"]))
 if not creds.valid:
     # Note: If the "app" is in testing, the refresh token will be valid for 7 days only.
@@ -99,28 +115,17 @@ if not creds.valid:
     # with the refresh token (both part of the GOOGLE_TOKEN json).
     creds.refresh(Request())
 
-with open("recipients.txt", "r") as r:
-    recipients = r.read().split("\n")
-
 errors = []
 events = []
 
-for crispy_beef in crispy_beefs:
+for email in emails:
+
     try:
-        res = create_event(creds, crispy_beef[0], crispy_beef[1], recipients)
+        create_event(creds, *email)
         # Unused, as the htmlLink appears not to work...
-        events.append(f"{crispy_beef[0]}: {res['htmlLink']}")
+        # events.append(f"{crispy_beef[0]}: {res['htmlLink']}")
     except Exception as e:
         errors.append(e)
-
-if len(errors) > 0:
-    raise Exception(errors)
-
-# subject = f"Crispy Beef this {' and '.join(c[0] for c in crispy_beefs)}"
-# for recipient in recipients:
-#     error = send_message(creds, subject, "", recipient)
-#     if error is not None:
-#         errors.append(error)
 
 if len(errors) > 0:
     raise Exception(errors)

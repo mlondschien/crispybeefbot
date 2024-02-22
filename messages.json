@@ -1,0 +1,34 @@
+{
+    "crispybeef": {
+        "regex": "crispy beef",
+        "mensas": ["Clausiusbar"],
+        "recipients": [
+            "malte.londschien@ai.ethz.ch",
+            "gianna.wolfisberg@mat.ethz.ch",
+            "stefan.strub@erdw.ethz.ch",
+            "sutterd@itp.phys.ethz.ch",
+            "lucabri@ethz.ch"
+        ]
+    },
+    "lasagne": {
+        "regex": "(lasagn|melanzane)",
+        "mensas": [
+            "Food Market (grill bbq)",
+            "Food Market (green day)",
+            "Fusion"
+        ],
+        "recipients": [
+            "gianna.wolfisberg@mat.ethz.ch"
+        ]
+    },
+    "nachoburrito": {
+        "regex": "(?=.*burrito)(?=.*nacho)",
+        "mensas": [
+            "Food Market (grill bbq)",
+            "Food Market (green day)"
+        ],
+        "recipients": [
+            "gianna.wolfisberg@mat.ethz.ch"
+        ]
+    }
+}

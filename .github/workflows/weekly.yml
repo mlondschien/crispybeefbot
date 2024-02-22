@@ -2,10 +2,10 @@ name: Daily runs
 on:
   schedule:
     - cron: '0 8 * * 1'  # 7 am UTC on mondays
-  push:
-    paths:
-    - '.github/workflows/weekly.yml'
-    - 'crispybeefbot.py'
+  # push:
+    # paths:
+    # - '.github/workflows/weekly.yml'
+    # - 'crispybeefbot.py'
 
 jobs:
   crispy-beef-check:
