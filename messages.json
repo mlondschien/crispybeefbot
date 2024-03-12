@@ -22,8 +22,8 @@
             "muriel.scherer@mat.ethz.ch"
         ]
     },
-    "nachoburrito": {
-        "regex": "(?=.*burrito)(?=.*nacho)",
+    "burrito": {
+        "regex": "(burrito)",
         "mensas": [
             "Food Market (grill bbq)",
             "Food Market (green day)"
