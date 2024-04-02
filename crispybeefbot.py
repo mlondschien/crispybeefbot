@@ -56,6 +56,13 @@ for item in items.values():
                     continue
 
                 for meal in meal_time["line-array"]:
+                    if "meal" not in meal:
+                        # E.g., if one day is a holiday:
+                        # (Pdb) meal_time["line-array"]
+                        # [{'name': 'fire'}, {'name': 'grill'}]
+                        continue  
+    
+
                     name = meal["meal"]["name"]
                     if re.search(item["regex"], name, re.IGNORECASE) is not None:
                         emails += [(mensa, day, date, name, item["recipients"])]
