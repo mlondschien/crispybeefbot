@@ -1,0 +1,14 @@
+name: Github Action with a cronjob trigger
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  keep-cron-alive:
+    name: Empty commit to keep the cronjob alive
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: gautamkrishnar/keepalive-workflow@beb86212524e1ae856d1cd80efb44e73bf7daf4a
