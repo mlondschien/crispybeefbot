@@ -14,13 +14,18 @@ import re
 
 MENSA_IDS = {
     "Clausiusbar": 3,
-    "Polyterrasse": 12,
+    "Dozentenfoyer": 5,
+    "food&lab": 7,
+    "Archimedes": 8,
+    "Polyterrasse": 9,
+    "Polysnack": 10,
+    "Tannenbar": 11,
     "Food Market (grill bbq)": 18,
     "Food Market (green day)": 17,
     "Fusion": 20,
 }
 
-BASE_URL = "https://idapps.ethz.ch/cookpit-pub-services/v1/weeklyrotas/?client-id=ethz-wcms&lang=de&rs-first=0&rs-size=50"
+BASE_URL = "https://idapps.ethz.ch/cookpit-pub-services/v1/weeklyrotas?client-id=ethz-wcms&lang=de&rs-first=0&rs-size=50"
 
 with open(Path(__file__).parent / "messages.json") as f:
     items = json.load(f)
@@ -35,9 +40,12 @@ for item in items.values():
         mensa_id = MENSA_IDS[mensa]
 
         url = f"{BASE_URL}&valid-after={today}&valid-before={next_week}&facility={mensa_id}"
-        response = json.loads(
-            requests.get(url, headers={"User-Agent": "Custom"}, json=True).text
-        )
+
+        response = json.loads(requests.get(url, headers={"User-Agent": "Custom"}, json=True).text)
+
+        if len(response["weekly-rota-array"]) == 0:
+            continue
+        
         start_of_the_week = datetime.datetime.strptime(
             response["weekly-rota-array"][0]["valid-from"], "%Y-%m-%d"
         )
